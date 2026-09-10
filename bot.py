@@ -218,9 +218,22 @@ class SubscriptionMiddleware(BaseMiddleware):
         if await get_unused_grant(user.id):
             return await handler(event, data)
 
-        ok, missing = await check_subscription(user.id)
+        try:
+            ok, missing = await check_subscription(user.id)
+        except Exception as e:
+            logging.exception(f"Ошибка проверки подписки для {user.id}: {e}")
+            ok, missing = False, [
+                (sid, invite_url, button_text)
+                for sid, chat_id, invite_url, button_text in await get_active_sponsors()
+            ]
+
+        logging.info(f"[subscription check] user={user.id} ok={ok} missing={[m[2] for m in missing]}")
+
         if not ok:
-            await send_subscription_prompt(event, missing)
+            try:
+                await send_subscription_prompt(event, missing)
+            except Exception as e:
+                logging.exception(f"Не удалось отправить запрос подписки {user.id}: {e}")
             return
         return await handler(event, data)
 
