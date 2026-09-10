@@ -1,0 +1,41 @@
+services:
+  # Основной бот — раздаёт читы, админ-панель, список спонсоров и т.д.
+  - type: web
+    name: cheat-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: DB_PATH
+        value: cheats.db
+      # Адрес и секрет чекер-бота (сервис sponsor-checker ниже).
+      # После первого деплоя обоих сервисов подставьте сюда реальный внутренний
+      # адрес чекер-бота, например https://sponsor-checker.onrender.com
+      - key: CHECKER_URL
+        sync: false
+      - key: CHECKER_SECRET
+        sync: false
+
+  # Чекер-бот — отдельный "нейтральный" бот, которого спонсоры добавляют
+  # администратором в свои каналы ТОЛЬКО для проверки подписки.
+  # У него нет читов и контента, только HTTP API для основного бота.
+  - type: web
+    name: sponsor-checker
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python checker_bot.py
+    envVars:
+      - key: CHECKER_BOT_TOKEN
+        sync: false
+      - key: CHECKER_SECRET
+        sync: false
+      - key: CHECKER_ADMIN_IDS
+        sync: false
+      - key: CHECKER_DB_PATH
+        value: checker.db
